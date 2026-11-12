@@ -6,9 +6,22 @@
 <title>Séances ciné autour de Lyon</title>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-:root{--ink:#101828;--muted:#4B5565;--bg:#EEF1F5;--card:#fff;--line:#E5E9F0;--edge:#DDE2EA;--chipedge:#C7CEDA;--accent:#C8321A;
+:root{color-scheme:dark;--ink:#eef0f4;--muted:#9aa3b2;--bg:#0d0f13;--card:#171a21;--line:#262b36;--edge:#232833;--chipedge:#3a4150;--accent:#e5502f;
 --display:'Bricolage Grotesque',system-ui,sans-serif;--body:'DM Sans',system-ui,sans-serif}
 *{box-sizing:border-box}
+input,button{color:inherit}
+button{color:var(--ink)}
+.pill[aria-pressed=true],.tag.wl{color:#fff}
+.sheet{display:flex;flex-direction:column;gap:16px}
+.back{align-self:flex-start;min-height:44px;padding:0 16px;border-radius:22px;border:1.5px solid var(--chipedge);background:var(--card);font:inherit;font-weight:700;cursor:pointer}
+.sheet h1{font-size:30px}
+.sheethead{display:flex;gap:16px;align-items:flex-start}
+.sheethead .poster{width:96px;height:140px}
+.syn{line-height:1.5;font-size:15px;margin:0}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14px}.kv dt{color:var(--muted)}.kv dd{margin:0}
+.day-h{font-weight:700;font-size:14px;margin-top:4px;text-transform:capitalize}
+.film h2 button{all:unset;cursor:pointer}.film h2 button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.poster{cursor:pointer}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body)}
 a{color:inherit;text-decoration:none}
 a:focus-visible,button:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
@@ -16,13 +29,13 @@ a:focus-visible,button:focus-visible,summary:focus-visible,input:focus-visible{o
 .now{font-size:13px;font-weight:500;color:var(--muted);font-variant-numeric:tabular-nums}
 h1{margin:4px 0 0;font-family:var(--display);font-size:32px;line-height:1.05;font-weight:700;text-wrap:balance}
 .days{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
-.day{flex:none;width:52px;min-height:64px;border-radius:12px;border:1.5px solid var(--chipedge);background:#fff;color:var(--ink);font:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer}
+.day{flex:none;width:52px;min-height:64px;border-radius:12px;border:1.5px solid var(--chipedge);background:var(--card);color:var(--ink);font:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer}
 .day span:first-child{font-size:12px;font-weight:500}.day span:last-child{font-size:20px;font-weight:700}
-.day[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.day[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.pill{min-height:44px;padding:0 16px;border-radius:22px;border:1.5px solid var(--chipedge);background:#fff;color:var(--ink);font:inherit;font-size:14px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center}
+.pill{min-height:44px;padding:0 16px;border-radius:22px;border:1.5px solid var(--chipedge);background:var(--card);color:var(--ink);font:inherit;font-size:14px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center}
 .pill[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#fff}
-details.cin{background:#fff;border:1.5px solid var(--chipedge);border-radius:22px}
+details.cin{background:var(--card);border:1.5px solid var(--chipedge);border-radius:22px}
 details.cin summary{min-height:44px;padding:0 16px;display:flex;align-items:center;font-size:14px;font-weight:700;cursor:pointer;list-style:none}
 details.cin[open]{border-radius:16px;flex:1 1 100%}
 .cinlist{padding:4px 16px 12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}
@@ -35,30 +48,29 @@ details.cin[open]{border-radius:16px;flex:1 1 100%}
 .meta{font-size:13px;color:var(--muted)}
 .tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
 .tag{padding:2px 8px;border-radius:6px;background:var(--line);font-size:12px;font-weight:700}
-.tag.re{background:var(--ink);color:#fff}
+.tag.re{background:var(--ink);color:var(--bg)}
 .row{border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:8px}
 .rowh{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .rowh b{font-size:15px}.rowh span{font-size:13px;color:var(--muted)}
 .chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.chip{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 14px;border:1.5px solid var(--ink);border-radius:10px;background:#fff;font-size:16px;font-weight:700;font-variant-numeric:tabular-nums}
+.chip{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 14px;border:1.5px solid var(--ink);border-radius:10px;background:var(--card);font-size:16px;font-weight:700;font-variant-numeric:tabular-nums}
 .chip small{font-size:12px;font-weight:700;color:var(--muted)}
-.chip.soon{background:var(--accent);border-color:var(--accent);color:#fff}.chip.soon small{color:#fff}
 .chip.nob{border-style:dashed;border-color:#6B7280}
-.note{font-size:12px;color:var(--muted)}.soonl{font-size:12px;font-weight:700;color:var(--accent)}
-.empty{background:#fff;border:1px solid var(--edge);border-radius:16px;padding:24px;text-align:center;color:var(--muted)}
-.tag.wl{background:var(--accent);color:#fff}.tag.seen{background:#fff;border:1px solid var(--chipedge);color:var(--muted)}
+.note{font-size:12px;color:var(--muted)}
+.empty{background:var(--card);border:1px solid var(--edge);border-radius:16px;padding:24px;text-align:center;color:var(--muted)}
+.tag.wl{background:var(--accent);color:#fff}.tag.seen{background:var(--card);border:1px solid var(--chipedge);color:var(--muted)}
 .film.seen{opacity:.55}
-details.lb{background:#fff;border:1.5px solid var(--chipedge);border-radius:16px;flex:1 1 100%}
+details.lb{background:var(--card);border:1.5px solid var(--chipedge);border-radius:16px;flex:1 1 100%}
 details.lb summary{min-height:44px;padding:0 16px;display:flex;align-items:center;font-size:14px;font-weight:700;cursor:pointer;list-style:none}
 .lbbody{padding:4px 16px 16px;display:flex;flex-direction:column;gap:12px;font-size:14px}
 .lbbody ol{margin:0;padding-left:20px;color:var(--muted)}
 .file{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-height:44px}
 .file input{font:inherit;font-size:14px;max-width:100%}
-.lbbody button{min-height:44px;padding:0 16px;border-radius:12px;border:1.5px solid var(--chipedge);background:#fff;font:inherit;font-weight:700;cursor:pointer;align-self:flex-start}
+.lbbody button{min-height:44px;padding:0 16px;border-radius:12px;border:1.5px solid var(--chipedge);background:var(--card);font:inherit;font-weight:700;cursor:pointer;align-self:flex-start}
 .foot{font-size:12px;color:var(--muted);text-align:center}
 </style>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#14110f">
+<meta name="theme-color" content="#0d0f13">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Ciné Lyon">
@@ -81,7 +93,7 @@ const dayInfo=d=>{const dt=new Date(d+'T12:00:00Z');return {dow:DOW[dt.getUTCDay
 const longDay=d=>new Intl.DateTimeFormat('fr-FR',{timeZone:'UTC',weekday:'long',day:'numeric',month:'long'}).format(new Date(d+'T12:00:00Z'));
 const state={day:null,rest:false,vo:false,off:new Set(JSON.parse(localStorage.getItem('offCinemas')||'[]'))};
 let D=null,S=[],LBMSG='';
-state.hideSeen=localStorage.getItem('hideSeen')!=='0';state.wl=false;
+state.hideSeen=localStorage.getItem('hideSeen')!=='0';state.wl=false;state.fopen=localStorage.getItem('fopen')==='1';state.film=null;
 const LB=JSON.parse(localStorage.getItem('lb')||'null')||{watched:[],watchlist:[],at:null};
 function norm(t){return String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/&/g,' and ').replace(/[^a-z0-9]+/g,' ').trim().replace(/^(the|le|la|les|l|un|une|a|an) /,'')}
 function lbIndex(list){const m=new Map();for(const [n,y] of list){const k=norm(n);if(!k)continue;if(!m.has(k))m.set(k,[]);m.get(k).push(y)}return m}
@@ -130,8 +142,14 @@ async function init(){
   render(days);
   pullLB().then(ch=>{if(ch)render(days)}).catch(()=>{});
 }
+let DAYS=[];
+function filtersCount(){return (state.off.size?1:0)+(state.rest?1:0)+(state.vo?1:0)+(state.wl?1:0)}
 function render(days){
-  const now=parisNow(),app=document.getElementById('app');
+  if(days)DAYS=days;days=DAYS;
+  const app=document.getElementById('app');
+  const open={};app.querySelectorAll('details').forEach(d=>open[d.className]=d.open);
+  const now=parisNow();
+  if(state.film){renderSheet(now);return}
   const today=state.day===now.date;
   let list=S.filter(s=>s.date===state.day&&!state.off.has(s.c)&&(!state.vo||s.v.startsWith('VO'))&&(!today||toMin(s.tm)>now.min));
   const byFilm={};
@@ -147,15 +165,20 @@ function render(days){
   const nSeen=hasLB?new Set(list.filter(s=>lbStatus(D.films[s.f])==='seen').map(s=>s.f)).size:0;
   const cinBox=Object.entries(D.cinemas).map(([id,c])=>`<label for="c-${id}"><input id="c-${id}" type="checkbox" data-c="${id}" ${state.off.has(id)?'':'checked'}>${esc(c.name)}<span class="note">${esc(c.town||'')}</span></label>`).join('');
   const title=today?'Aujourd’hui':longDay(state.day).replace(/^./,c=>c.toUpperCase());
+  const fc=filtersCount();
   app.innerHTML=`
-  <div><div class="now">${longDay(now.date)}, ${now.hm}</div><h1>${state.rest?'Ressorties et classiques':'Séances autour de Lyon'}</h1></div>
+  <h1>Séances</h1>
   <div class="days" role="group" aria-label="Jour">${days.map(d=>{const i=dayInfo(d);return `<button class="day" data-d="${d}" aria-pressed="${d===state.day}"><span>${d===now.date?'Auj.':i.dow}</span><span>${i.num}</span></button>`}).join('')}</div>
-  <div class="bar">
+  <div class="bar"><button class="pill" id="ftog" aria-expanded="${state.fopen}">Filtres${fc?` · ${fc}`:''}</button></div>
+  ${state.fopen?`<div class="bar">
     <details class="cin"><summary>Cinémas · ${nCin-state.off.size}/${nCin}</summary><div class="cinlist">${cinBox}</div></details>
     <button class="pill" id="rest" aria-pressed="${state.rest}">Ressorties</button>
     <button class="pill" id="vo" aria-pressed="${state.vo}">VO</button>
     ${hasLB?`<button class="pill" id="wl" aria-pressed="${state.wl}">Ma watchlist · ${wlWeek}</button><button class="pill" id="seen" aria-pressed="${state.hideSeen}">Masquer les vus${nSeen?` · ${nSeen}`:''}</button>`:''}
-    <details class="lb"><summary>Letterboxd${hasLB?` · ${LB.watched.length} vus, ${LB.watchlist.length} à voir`:''}</summary><div class="lbbody">
+  </div>`:''}
+  <h2 style="margin:0;font-family:var(--display);font-size:20px">${title} · ${films.length} film${films.length>1?'s':''}</h2>
+  ${films.length?films.map(x=>card(x,now,today)).join(''):'<div class="empty">Aucune séance avec ces filtres.</div>'}
+  <details class="lb"><summary>Letterboxd${hasLB?` · ${LB.watched.length} vus, ${LB.watchlist.length} à voir`:''}</summary><div class="lbbody">
       <ol><li>Sur letterboxd.com, Réglages, Données, Exporter</li><li>Dézippe, puis choisis les deux fichiers ci-dessous</li></ol>
       <label class="file">watched.csv <input type="file" accept=".csv,text/csv" data-k="watched"></label>
       <label class="file">watchlist.csv <input type="file" accept=".csv,text/csv" data-k="watchlist"></label>
@@ -164,14 +187,15 @@ function render(days){
       ${getCode()?'<div class="file"><button id="lbsync">Synchroniser maintenant</button><button id="lblink">Copier le lien pour mon téléphone</button></div>':''}
       <div class="note" id="lbmsg">Les fichiers restent sur cet appareil, rien n’est envoyé.</div>
       ${hasLB?'<button id="lbclear">Effacer mes données Letterboxd</button>':''}
-    </div></details>
-  </div>
-  <h2 style="margin:0;font-family:var(--display);font-size:20px">${title} · ${films.length} film${films.length>1?'s':''}</h2>
-  ${films.length?films.map(x=>card(x,now,today)).join(''):'<div class="empty">Aucune séance avec ces filtres.</div>'}
+  </div></details>
   <div class="foot">Horaires récupérés le ${esc(new Date(D.generatedAt).toLocaleString('fr-FR',{timeZone:TZ,dateStyle:'short',timeStyle:'short'}))} · Source Allociné</div>`;
+  if(open.lb)app.querySelector('details.lb').open=true;
+  const cd=app.querySelector('details.cin');if(cd&&open.cin)cd.open=true;
   app.querySelectorAll('.day').forEach(b=>b.onclick=()=>{state.day=b.dataset.d;render(days)});
-  app.querySelector('#rest').onclick=()=>{state.rest=!state.rest;render(days)};
-  app.querySelector('#vo').onclick=()=>{state.vo=!state.vo;render(days)};
+  app.querySelector('#ftog').onclick=()=>{state.fopen=!state.fopen;localStorage.setItem('fopen',state.fopen?'1':'0');render(days)};
+  const r=app.querySelector('#rest');if(r)r.onclick=()=>{state.rest=!state.rest;render(days)};
+  const v=app.querySelector('#vo');if(v)v.onclick=()=>{state.vo=!state.vo;render(days)};
+  app.querySelectorAll('[data-film]').forEach(b=>b.onclick=()=>openFilm(b.dataset.film));
   const w=app.querySelector('#wl');if(w)w.onclick=()=>{state.wl=!state.wl;render(days)};
   const sn=app.querySelector('#seen');if(sn)sn.onclick=()=>{state.hideSeen=!state.hideSeen;localStorage.setItem('hideSeen',state.hideSeen?'1':'0');render(days)};
   app.querySelectorAll('.lb input[type=file]').forEach(inp=>inp.onchange=async()=>{
@@ -193,28 +217,28 @@ function render(days){
     try{await navigator.clipboard.writeText(u);m.textContent='Lien copié. Envoie-le toi (mail, message) et ouvre-le sur ton téléphone.'}catch(e){m.textContent=u}};
   if(LBMSG){const m=app.querySelector('#lbmsg');if(m)m.textContent=LBMSG;LBMSG=''}
   const lc=app.querySelector('#lbclear');if(lc)lc.onclick=()=>{LB.watched=[];LB.watchlist=[];localStorage.removeItem('lb');IDX={watched:new Map(),watchlist:new Map()};Object.values(D.films).forEach(x=>delete x._lb);state.wl=false;render(days)};
-  const det=app.querySelector('details.cin');
   app.querySelectorAll('.cinlist input').forEach(i=>i.onchange=()=>{i.checked?state.off.delete(i.dataset.c):state.off.add(i.dataset.c);localStorage.setItem('offCinemas',JSON.stringify([...state.off]));render(days);app.querySelector('details.cin').open=true});
 }
-function card({id,f,cs},now,today){
-  const reissue=isReissue(f,now);
-  const meta=[(f.g||[]).slice(0,2).join(', '),f.d,f.rt,f.y].filter(Boolean).map(esc).join(' · ');
-  const poster=f.p?`<img class="poster" src="${esc(f.p)}" alt="" loading="lazy" width="60" height="88">`:`<div class="poster" aria-hidden="true">${esc(f.t.slice(0,2))}</div>`;
-  const rows=Object.entries(cs).sort((a,b)=>toMin(a[1][0].tm)-toMin(b[1][0].tm)).map(([cid,ss])=>{
-    ss.sort((a,b)=>a.tm.localeCompare(b.tm));
-    const chips=ss.map(s=>{
-      const soon=today&&toMin(s.tm)-now.min<=60;
-      const ver=s.v==='VF'?'':`<small>${esc(s.v)}</small>`;
-      const inner=`${s.tm}${ver}`;
-      return s.u?`<a class="chip${soon?' soon':''}" href="${esc(s.u)}" target="_blank" rel="noopener">${inner}</a>`:`<span class="chip nob${soon?' soon':''}">${inner}</span>`;
-    }).join('');
-    const mins=today?toMin(ss[0].tm)-now.min:99;
-    const nob=ss.some(s=>!s.u);
-    return `<div class="row"><div class="rowh"><b>${esc(D.cinemas[cid].name)}</b><span>${esc(D.cinemas[cid].town||'')}</span></div><div class="chips">${chips}${mins<=60?`<span class="soonl">Dans ${mins} min</span>`:''}${nob?'<span class="note">Pas de réservation en ligne</span>':''}</div></div>`;
-  }).join('');
-  const lb=lbStatus(f);
-  return `<section class="film${lb==='seen'?' seen':''}"><div class="head">${poster}<div><h2>${esc(f.t)}</h2><div class="meta">${meta}</div><div class="tags">${lb==='wl'?'<span class="tag wl">Dans ta watchlist</span>':''}${lb==='seen'?'<span class="tag seen">Déjà vu</span>':''}${reissue?`<span class="tag re">Ressortie${f.y?` · film de ${f.y}`:''}</span>`:''}${f.sc?`<span class="tag">Allociné ${String(f.sc).replace('.',',')}/5</span>`:''}</div></div></div>${rows}</section>`;
+function openFilm(id){state.film=id;state.scroll=scrollY;history.pushState({film:id},'');render();scrollTo(0,0)}
+function closeFilm(){state.film=null;render();scrollTo(0,state.scroll||0)}
+addEventListener('popstate',()=>{if(state.film)closeFilm()});
+function renderSheet(now){
+  const app=document.getElementById('app'),f=D.films[state.film],lb=lbStatus(f);
+  const poster=f.p?`<img class="poster" src="${esc(f.p)}" alt="" width="96" height="140">`:`<div class="poster" aria-hidden="true">${esc(f.t.slice(0,2))}</div>`;
+  const kv=[['Réalisation',f.d],['Avec',(f.ac||[]).join(', ')],['Genre',(f.g||[]).join(', ')],['Durée',f.rt],['Année',f.y],['Pays',(f.co||[]).join(', ')],['Titre original',f.ot]].filter(x=>x[1]&&x[1].length!==0);
+  const ss=S.filter(s=>s.f===state.film&&s.date>=now.date&&(s.date>now.date||toMin(s.tm)>now.min)&&!state.off.has(s.c));
+  const byDay={};for(const s of ss)((byDay[s.date]??={})[s.c]??=[]).push(s);
+  const sess=Object.keys(byDay).sort().map(d=>`<div class="row"><div class="day-h">${longDay(d)}</div>${Object.entries(byDay[d]).map(([cid,l])=>`<div class="rowh"><b>${esc(D.cinemas[cid].name)}</b></div><div class="chips">${l.sort((a,b)=>a.tm.localeCompare(b.tm)).map(s=>{const ver=s.v==='VF'?'':`<small>${esc(s.v)}</small>`;return s.u?`<a class="chip" href="${esc(s.u)}" target="_blank" rel="noopener">${s.tm}${ver}</a>`:`<span class="chip nob">${s.tm}${ver}</span>`}).join('')}</div>`).join('')}</div>`).join('');
+  app.innerHTML=`<div class="sheet"><button class="back" id="back">← Retour</button>
+   <div class="sheethead">${poster}<div><h1>${esc(f.t)}</h1><div class="tags">${lb==='wl'?'<span class="tag wl">Dans ta watchlist</span>':''}${lb==='seen'?'<span class="tag seen">Déjà vu</span>':''}${isReissue(f,now)?`<span class="tag re">Ressortie${f.y?` · film de ${f.y}`:''}</span>`:''}${f.sc?`<span class="tag">Allociné ${String(f.sc).replace('.',',')}/5</span>`:''}</div></div></div>
+   ${f.syn?`<p class="syn">${esc(f.syn)}</p>`:'<p class="note">Résumé disponible après la prochaine actualisation des données.</p>'}
+   ${kv.length?`<dl class="kv">${kv.map(([k,v])=>`<dt>${k}</dt><dd>${esc(v)}</dd>`).join('')}</dl>`:''}
+   <div class="bar"><a class="pill" href="https://letterboxd.com/search/${encodeURIComponent(f.ot||f.t)}/" target="_blank" rel="noopener">Voir sur Letterboxd</a></div>
+   <h2 style="margin:0;font-family:var(--display);font-size:20px">Séances</h2>${sess||'<div class="empty">Plus de séance avec tes filtres cinémas.</div>'}</div>`;
+  document.getElementById('back').onclick=()=>history.back();
 }
+setInterval(()=>{if(!document.hidden&&D&&!state.film&&!document.activeElement?.matches('input'))render()},30000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&D&&!state.film)render()});
 init().catch(e=>{document.getElementById('app').innerHTML=`<div class="empty">Impossible de charger les séances. ${esc(e.message)}</div>`});
 </script>
 <script>if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});</script>

@@ -4,7 +4,9 @@
 Usage : python scrape.py [nombre_de_jours]   (7 jours par défaut)
 Aucune dépendance : bibliothèque standard uniquement.
 """
-import json, sys, time, datetime as dt
+import html
+import json
+import re, sys, time, datetime as dt
 import urllib.request, urllib.error
 from pathlib import Path
 
@@ -63,6 +65,14 @@ def film_summary(m):
                      if (c.get("position") or {}).get("name") == "DIRECTOR"), None)
     person = (director or {}).get("person") or {}
     title = m.get("title")
+    syn = re.sub(r"<[^>]+>", " ", m.get("synopsisFull") or m.get("synopsis") or "")
+    syn = re.sub(r"\s+", " ", html.unescape(syn)).strip()
+    actors = []
+    for e in ((m.get("cast") or {}).get("edges") or []):
+        a = ((e.get("node") or {}).get("actor")) or {}
+        nm = f"{a.get('firstName') or ''} {a.get('lastName') or ''}".strip()
+        if nm:
+            actors.append(nm)
     return {
         "t": title,
         "ot": m.get("originalTitle") if m.get("originalTitle") != title else None,
@@ -72,6 +82,9 @@ def film_summary(m):
         "d": (f"{person.get('firstName') or ''} {person.get('lastName') or ''}".strip() or None),
         "p": (m.get("poster") or {}).get("url"),
         "sc": ((m.get("stats") or {}).get("userRating") or {}).get("score"),
+        "syn": syn or None,
+        "ac": actors[:6],
+        "co": [c.get("localizedName") or c.get("name") for c in (m.get("countries") or [])],
         "rr": date_of(rerelease),
         "rel": date_of(original),
     }
