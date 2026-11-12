@@ -93,6 +93,7 @@ function inIdx(idx,f){
 function lbStatus(f){if(f._lb===undefined)f._lb=inIdx(IDX.watched,f)?'seen':(inIdx(IDX.watchlist,f)?'wl':'');return f._lb}
 const SB='https://mzcigllddekrdqfpbixh.supabase.co/rest/v1/rpc/',SBK='sb_publishable_JTLvwlGMdt8K7YtsxjClBw_7kXOd_0n';
 const sbCall=(fn,body)=>fetch(SB+fn,{method:'POST',headers:{apikey:SBK,Authorization:'Bearer '+SBK,'Content-Type':'application/json'},body:JSON.stringify(body)}).then(r=>{if(!r.ok)throw new Error('serveur '+r.status);return r.status===204?null:r.json()});
+(()=>{const m=location.hash.match(/sync=([a-z0-9]{12,})/i);if(m){localStorage.setItem('lbCode',m[1]);history.replaceState(null,'',location.pathname+location.search)}})();
 const getCode=()=>localStorage.getItem('lbCode')||'';
 function applyLB(w,l){LB.watched=w;LB.watchlist=l;localStorage.setItem('lb',JSON.stringify(LB));IDX={watched:lbIndex(LB.watched),watchlist:lbIndex(LB.watchlist)};Object.values(D.films).forEach(x=>delete x._lb)}
 async function pullLB(){const c=getCode();if(!c)return false;const r=await sbCall('cine_lb_get',{p_code:c});if(!r)return false;
@@ -160,6 +161,7 @@ function render(days){
       <label class="file">watchlist.csv <input type="file" accept=".csv,text/csv" data-k="watchlist"></label>
       <div class="file">Code de synchro <input id="lbcode" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(getCode())}" placeholder="colle ou crée un code" style="min-width:200px"></div>
       <div class="file"><button id="lbgen">Créer un code</button><button id="lbsave">Enregistrer le code</button></div>
+      ${getCode()?'<div class="file"><button id="lbsync">Synchroniser maintenant</button><button id="lblink">Copier le lien pour mon téléphone</button></div>':''}
       <div class="note" id="lbmsg">Les fichiers restent sur cet appareil, rien n’est envoyé.</div>
       ${hasLB?'<button id="lbclear">Effacer mes données Letterboxd</button>':''}
     </div></details>
@@ -184,6 +186,11 @@ function render(days){
     localStorage.setItem('lbCode',c);const m=app.querySelector('#lbmsg');m.textContent='Synchronisation…';
     try{const had=await pullLB();if(!had&&(LB.watched.length||LB.watchlist.length)){await pushLB('watched');await pushLB('watchlist')}LBMSG=had?'Données récupérées depuis ton autre appareil.':'Code enregistré, données envoyées.';render(days);app.querySelector('details.lb').open=true}
     catch(e){m.textContent='Erreur de synchro : '+e.message}};
+  const sy=app.querySelector('#lbsync');if(sy)sy.onclick=async()=>{const m=app.querySelector('#lbmsg');m.textContent='Synchronisation…';
+    try{if(LB.watched.length||LB.watchlist.length){await pushLB('watched');await pushLB('watchlist');LBMSG='Envoyé. Les autres appareils se mettront à jour à leur prochaine ouverture.'}else{const ch=await pullLB();LBMSG=ch?'Données récupérées.':'Rien de nouveau.'}render(days);app.querySelector('details.lb').open=true}
+    catch(e){m.textContent='Erreur de synchro : '+e.message}};
+  const ln=app.querySelector('#lblink');if(ln)ln.onclick=async()=>{const u=location.origin+location.pathname+'#sync='+getCode();const m=app.querySelector('#lbmsg');
+    try{await navigator.clipboard.writeText(u);m.textContent='Lien copié. Envoie-le toi (mail, message) et ouvre-le sur ton téléphone.'}catch(e){m.textContent=u}};
   if(LBMSG){const m=app.querySelector('#lbmsg');if(m)m.textContent=LBMSG;LBMSG=''}
   const lc=app.querySelector('#lbclear');if(lc)lc.onclick=()=>{LB.watched=[];LB.watchlist=[];localStorage.removeItem('lb');IDX={watched:new Map(),watchlist:new Map()};Object.values(D.films).forEach(x=>delete x._lb);state.wl=false;render(days)};
   const det=app.querySelector('details.cin');
