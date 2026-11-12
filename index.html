@@ -96,12 +96,14 @@ let D=null,S=[],LBMSG='';
 state.hideSeen=localStorage.getItem('hideSeen')!=='0';state.wl=false;state.fopen=localStorage.getItem('fopen')==='1';state.film=null;
 const LB=JSON.parse(localStorage.getItem('lb')||'null')||{watched:[],watchlist:[],at:null};
 function norm(t){return String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/&/g,' and ').replace(/[^a-z0-9]+/g,' ').trim().replace(/^(the|le|la|les|l|un|une|a|an) /,'')}
-function lbIndex(list){const m=new Map();for(const [n,y] of list){const k=norm(n);if(!k)continue;if(!m.has(k))m.set(k,[]);m.get(k).push(y)}return m}
+function lbIndex(list){const m=new Map();for(const [n,y,u] of list){const k=norm(n);if(!k)continue;if(!m.has(k))m.set(k,[]);m.get(k).push({y,u})}return m}
 let IDX={watched:lbIndex(LB.watched),watchlist:lbIndex(LB.watchlist)};
-function inIdx(idx,f){
-  for(const name of [f.t,f.ot]){const ys=idx.get(norm(name));if(!ys)continue;if(!f.y||ys.some(y=>!y||Math.abs(y-f.y)<=1))return true}
-  return false;
+function findIdx(idx,f){
+  for(const name of [f.t,f.ot]){const es=idx.get(norm(name));if(!es)continue;const e=es.find(o=>!f.y||!o.y||Math.abs(o.y-f.y)<=1);if(e)return e}
+  return null;
 }
+const inIdx=(idx,f)=>!!findIdx(idx,f);
+function lbLink(f){const e=findIdx(IDX.watchlist,f)||findIdx(IDX.watched,f);return (e&&e.u)||('https://letterboxd.com/search/'+encodeURIComponent(f.ot||f.t)+'/')}
 function lbStatus(f){if(f._lb===undefined)f._lb=inIdx(IDX.watched,f)?'seen':(inIdx(IDX.watchlist,f)?'wl':'');return f._lb}
 const SB='https://mzcigllddekrdqfpbixh.supabase.co/rest/v1/rpc/',SBK='sb_publishable_JTLvwlGMdt8K7YtsxjClBw_7kXOd_0n';
 const sbCall=(fn,body)=>fetch(SB+fn,{method:'POST',headers:{apikey:SBK,Authorization:'Bearer '+SBK,'Content-Type':'application/json'},body:JSON.stringify(body)}).then(r=>{if(!r.ok)throw new Error('serveur '+r.status);return r.status===204?null:r.json()});
@@ -119,9 +121,9 @@ function parseCSV(txt){
     else if(c==='\n'||c==='\r'){if(c==='\r'&&txt[i+1]==='\n')i++;row.push(cur);cur='';if(row.length>1||row[0])rows.push(row);row=[]}
     else cur+=c}
   if(cur||row.length){row.push(cur);rows.push(row)}
-  const h=rows.shift().map(x=>x.trim().toLowerCase());const ni=h.indexOf('name'),yi=h.indexOf('year');
+  const h=rows.shift().map(x=>x.trim().toLowerCase());const ni=h.indexOf('name'),yi=h.indexOf('year'),ui=h.indexOf('letterboxd uri');
   if(ni<0)throw new Error('colonne Name introuvable');
-  return rows.map(r=>[r[ni],+r[yi]||0]).filter(r=>r[0]);
+  return rows.map(r=>[r[ni],+r[yi]||0,ui>=0?(r[ui]||'').trim():'']).filter(r=>r[0]);
 }
 function isReissue(f,now){
   if(f.rr) return true;
@@ -233,7 +235,7 @@ function renderSheet(now){
    <div class="sheethead">${poster}<div><h1>${esc(f.t)}</h1><div class="tags">${lb==='wl'?'<span class="tag wl">Dans ta watchlist</span>':''}${lb==='seen'?'<span class="tag seen">Déjà vu</span>':''}${isReissue(f,now)?`<span class="tag re">Ressortie${f.y?` · film de ${f.y}`:''}</span>`:''}${f.sc?`<span class="tag">Allociné ${String(f.sc).replace('.',',')}/5</span>`:''}</div></div></div>
    ${f.syn?`<p class="syn">${esc(f.syn)}</p>`:'<p class="note">Résumé disponible après la prochaine actualisation des données.</p>'}
    ${kv.length?`<dl class="kv">${kv.map(([k,v])=>`<dt>${k}</dt><dd>${esc(v)}</dd>`).join('')}</dl>`:''}
-   <div class="bar"><a class="pill" href="https://letterboxd.com/search/${encodeURIComponent(f.ot||f.t)}/" target="_blank" rel="noopener">Voir sur Letterboxd</a></div>
+   <div class="bar"><a class="pill" href="${esc(lbLink(f))}" target="_blank" rel="noopener">Voir sur Letterboxd</a></div>
    <h2 style="margin:0;font-family:var(--display);font-size:20px">Séances</h2>${sess||'<div class="empty">Plus de séance avec tes filtres cinémas.</div>'}</div>`;
   document.getElementById('back').onclick=()=>history.back();
 }
