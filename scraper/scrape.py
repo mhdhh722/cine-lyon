@@ -116,7 +116,8 @@ def main():
         "films": films,
         "sessions": sessions,
     }
-    site = Path(__file__).resolve().parent.parent / "site"
+    root = Path(__file__).resolve().parent.parent
+    site = root / "site" if (root / "site").is_dir() else root
     payload = json.dumps(out, ensure_ascii=False, separators=(",", ":"))
     (site / "data.json").write_text(payload, encoding="utf-8")
     # data.js permet d'ouvrir index.html directement (double clic), sans serveur

@@ -1,0 +1,24 @@
+name: Actualiser les séances
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 5 * * *"
+    - cron: "17 13 * * *"
+permissions:
+  contents: write
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Récupérer les séances
+        run: python scraper/scrape.py 7
+      - name: Publier
+        run: |
+          git config user.name "seances-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add data.js data.json
+          git diff --cached --quiet || (git commit -m "Séances mises à jour" && git push)
