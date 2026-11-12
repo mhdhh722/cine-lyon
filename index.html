@@ -48,6 +48,13 @@ details.cin[open]{border-radius:16px;flex:1 1 100%}
 .empty{background:#fff;border:1px solid var(--edge);border-radius:16px;padding:24px;text-align:center;color:var(--muted)}
 .foot{font-size:12px;color:var(--muted);text-align:center}
 </style>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#14110f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Ciné Lyon">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 </head>
 <body>
 <div class="app" id="app"><div class="empty">Chargement des séances…</div></div>
@@ -132,5 +139,6 @@ function card({id,f,cs},now,today){
 }
 init().catch(e=>{document.getElementById('app').innerHTML=`<div class="empty">Impossible de charger les séances. ${esc(e.message)}</div>`});
 </script>
+<script>if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});</script>
 </body>
 </html>
