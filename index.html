@@ -226,7 +226,7 @@ function renderSheet(now){
   const app=document.getElementById('app'),f=D.films[state.film],lb=lbStatus(f);
   const poster=f.p?`<img class="poster" src="${esc(f.p)}" alt="" width="96" height="140">`:`<div class="poster" aria-hidden="true">${esc(f.t.slice(0,2))}</div>`;
   const kv=[['Réalisation',f.d],['Avec',(f.ac||[]).join(', ')],['Genre',(f.g||[]).join(', ')],['Durée',f.rt],['Année',f.y],['Pays',(f.co||[]).join(', ')],['Titre original',f.ot]].filter(x=>x[1]&&x[1].length!==0);
-  const ss=S.filter(s=>s.f===state.film&&s.date>=now.date&&(s.date>now.date||toMin(s.tm)>now.min)&&!state.off.has(s.c));
+  const ss=S.filter(s=>String(s.f)===String(state.film)&&s.date>=now.date&&(s.date>now.date||toMin(s.tm)>now.min)&&!state.off.has(s.c));
   const byDay={};for(const s of ss)((byDay[s.date]??={})[s.c]??=[]).push(s);
   const sess=Object.keys(byDay).sort().map(d=>`<div class="row"><div class="day-h">${longDay(d)}</div>${Object.entries(byDay[d]).map(([cid,l])=>`<div class="rowh"><b>${esc(D.cinemas[cid].name)}</b></div><div class="chips">${l.sort((a,b)=>a.tm.localeCompare(b.tm)).map(s=>{const ver=s.v==='VF'?'':`<small>${esc(s.v)}</small>`;return s.u?`<a class="chip" href="${esc(s.u)}" target="_blank" rel="noopener">${s.tm}${ver}</a>`:`<span class="chip nob">${s.tm}${ver}</span>`}).join('')}</div>`).join('')}</div>`).join('');
   app.innerHTML=`<div class="sheet"><button class="back" id="back">← Retour</button>
