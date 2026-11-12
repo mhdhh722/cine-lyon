@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Séances ciné autour de Lyon</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#101828;--muted:#4B5565;--bg:#EEF1F5;--card:#fff;--line:#E5E9F0;--edge:#DDE2EA;--chipedge:#C7CEDA;--accent:#C8321A;
+--display:'Bricolage Grotesque',system-ui,sans-serif;--body:'DM Sans',system-ui,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body)}
+a{color:inherit;text-decoration:none}
+a:focus-visible,button:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.app{max-width:760px;margin:0 auto;padding:20px 16px 48px;display:flex;flex-direction:column;gap:16px}
+.now{font-size:13px;font-weight:500;color:var(--muted);font-variant-numeric:tabular-nums}
+h1{margin:4px 0 0;font-family:var(--display);font-size:32px;line-height:1.05;font-weight:700;text-wrap:balance}
+.days{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.day{flex:none;width:52px;min-height:64px;border-radius:12px;border:1.5px solid var(--chipedge);background:#fff;color:var(--ink);font:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer}
+.day span:first-child{font-size:12px;font-weight:500}.day span:last-child{font-size:20px;font-weight:700}
+.day[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.pill{min-height:44px;padding:0 16px;border-radius:22px;border:1.5px solid var(--chipedge);background:#fff;color:var(--ink);font:inherit;font-size:14px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center}
+.pill[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#fff}
+details.cin{background:#fff;border:1.5px solid var(--chipedge);border-radius:22px}
+details.cin summary{min-height:44px;padding:0 16px;display:flex;align-items:center;font-size:14px;font-weight:700;cursor:pointer;list-style:none}
+details.cin[open]{border-radius:16px;flex:1 1 100%}
+.cinlist{padding:4px 16px 12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}
+.cinlist label{display:flex;align-items:center;gap:10px;min-height:44px;font-size:15px}
+.cinlist input{width:20px;height:20px;accent-color:var(--accent)}
+.film{background:var(--card);border:1px solid var(--edge);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.head{display:flex;gap:14px;align-items:center}
+.poster{flex:none;width:60px;height:88px;border-radius:8px;background:#2F4B7C;object-fit:cover;color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:22px;font-weight:700}
+.film h2{margin:0;font-family:var(--display);font-size:22px;line-height:1.1;font-weight:700}
+.meta{font-size:13px;color:var(--muted)}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
+.tag{padding:2px 8px;border-radius:6px;background:var(--line);font-size:12px;font-weight:700}
+.tag.re{background:var(--ink);color:#fff}
+.row{border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:8px}
+.rowh{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.rowh b{font-size:15px}.rowh span{font-size:13px;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chip{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 14px;border:1.5px solid var(--ink);border-radius:10px;background:#fff;font-size:16px;font-weight:700;font-variant-numeric:tabular-nums}
+.chip small{font-size:12px;font-weight:700;color:var(--muted)}
+.chip.soon{background:var(--accent);border-color:var(--accent);color:#fff}.chip.soon small{color:#fff}
+.chip.nob{border-style:dashed;border-color:#6B7280}
+.note{font-size:12px;color:var(--muted)}.soonl{font-size:12px;font-weight:700;color:var(--accent)}
+.empty{background:#fff;border:1px solid var(--edge);border-radius:16px;padding:24px;text-align:center;color:var(--muted)}
+.foot{font-size:12px;color:var(--muted);text-align:center}
+</style>
+</head>
+<body>
+<div class="app" id="app"><div class="empty">Chargement des séances…</div></div>
+<script src="data.js"></script>
+<script>
+const TZ='Europe/Paris';
+const DOW=['dim.','lun.','mar.','mer.','jeu.','ven.','sam.'];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function parisNow(){
+  const p=Object.fromEntries(new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date()).map(x=>[x.type,x.value]));
+  return {date:`${p.year}-${p.month}-${p.day}`,min:(+p.hour)*60+(+p.minute),hm:`${p.hour}:${p.minute}`};
+}
+const toMin=t=>(+t.slice(0,2))*60+(+t.slice(3,5));
+const dayInfo=d=>{const dt=new Date(d+'T12:00:00Z');return {dow:DOW[dt.getUTCDay()],num:dt.getUTCDate()}};
+const longDay=d=>new Intl.DateTimeFormat('fr-FR',{timeZone:'UTC',weekday:'long',day:'numeric',month:'long'}).format(new Date(d+'T12:00:00Z'));
+const state={day:null,rest:false,vo:false,off:new Set(JSON.parse(localStorage.getItem('offCinemas')||'[]'))};
+let D=null,S=[];
+function isReissue(f,now){
+  if(f.rr) return true;
+  if(f.rel){ if((new Date(now.date)-new Date(f.rel))/864e5>365) return true; }
+  return !!(f.y && f.y<=+now.date.slice(0,4)-3);
+}
+async function init(){
+  if(window.__DATA){D=window.__DATA}
+  else{
+    let r;try{r=await fetch('data.json',{cache:'no-store'})}catch(e){}
+    if(!r||!r.ok||!(r.headers.get('content-type')||'').includes('json')) throw new Error('fichier de séances introuvable. Lance « python scrape.py » puis place data.js dans le même dossier que index.html.');
+    D=await r.json();
+  }
+  S=D.sessions.map(([c,f,dt,v,u])=>({c,f,date:dt.slice(0,10),tm:dt.slice(11,16),v,u}));
+  const now=parisNow();
+  const days=[...new Set(S.map(s=>s.date))].filter(d=>d>=now.date).sort().slice(0,7);
+  state.day=days.includes(now.date)?now.date:days[0];
+  render(days);
+}
+function render(days){
+  const now=parisNow(),app=document.getElementById('app');
+  const today=state.day===now.date;
+  let list=S.filter(s=>s.date===state.day&&!state.off.has(s.c)&&(!state.vo||s.v.startsWith('VO'))&&(!today||toMin(s.tm)>now.min));
+  const byFilm={};
+  for(const s of list){(byFilm[s.f]??={})[s.c]??=[];byFilm[s.f][s.c].push(s)}
+  let films=Object.entries(byFilm).map(([id,cs])=>({id,f:D.films[id],cs,first:Math.min(...Object.values(cs).flat().map(s=>toMin(s.tm)))}));
+  if(state.rest) films=films.filter(x=>isReissue(x.f,now));
+  films.sort((a,b)=>a.first-b.first);
+  const nCin=Object.keys(D.cinemas).length;
+  const cinBox=Object.entries(D.cinemas).map(([id,c])=>`<label for="c-${id}"><input id="c-${id}" type="checkbox" data-c="${id}" ${state.off.has(id)?'':'checked'}>${esc(c.name)}<span class="note">${esc(c.town||'')}</span></label>`).join('');
+  const title=today?'Aujourd’hui':longDay(state.day).replace(/^./,c=>c.toUpperCase());
+  app.innerHTML=`
+  <div><div class="now">${longDay(now.date)}, ${now.hm}</div><h1>${state.rest?'Ressorties et classiques':'Séances autour de Lyon'}</h1></div>
+  <div class="days" role="group" aria-label="Jour">${days.map(d=>{const i=dayInfo(d);return `<button class="day" data-d="${d}" aria-pressed="${d===state.day}"><span>${d===now.date?'Auj.':i.dow}</span><span>${i.num}</span></button>`}).join('')}</div>
+  <div class="bar">
+    <details class="cin"><summary>Cinémas · ${nCin-state.off.size}/${nCin}</summary><div class="cinlist">${cinBox}</div></details>
+    <button class="pill" id="rest" aria-pressed="${state.rest}">Ressorties</button>
+    <button class="pill" id="vo" aria-pressed="${state.vo}">VO</button>
+  </div>
+  <h2 style="margin:0;font-family:var(--display);font-size:20px">${title} · ${films.length} film${films.length>1?'s':''}</h2>
+  ${films.length?films.map(x=>card(x,now,today)).join(''):'<div class="empty">Aucune séance avec ces filtres.</div>'}
+  <div class="foot">Horaires récupérés le ${esc(new Date(D.generatedAt).toLocaleString('fr-FR',{timeZone:TZ,dateStyle:'short',timeStyle:'short'}))} · Source Allociné</div>`;
+  app.querySelectorAll('.day').forEach(b=>b.onclick=()=>{state.day=b.dataset.d;render(days)});
+  app.querySelector('#rest').onclick=()=>{state.rest=!state.rest;render(days)};
+  app.querySelector('#vo').onclick=()=>{state.vo=!state.vo;render(days)};
+  const det=app.querySelector('details.cin');
+  app.querySelectorAll('.cinlist input').forEach(i=>i.onchange=()=>{i.checked?state.off.delete(i.dataset.c):state.off.add(i.dataset.c);localStorage.setItem('offCinemas',JSON.stringify([...state.off]));render(days);app.querySelector('details.cin').open=true});
+}
+function card({id,f,cs},now,today){
+  const reissue=isReissue(f,now);
+  const meta=[(f.g||[]).slice(0,2).join(', '),f.d,f.rt,f.y].filter(Boolean).map(esc).join(' · ');
+  const poster=f.p?`<img class="poster" src="${esc(f.p)}" alt="" loading="lazy" width="60" height="88">`:`<div class="poster" aria-hidden="true">${esc(f.t.slice(0,2))}</div>`;
+  const rows=Object.entries(cs).sort((a,b)=>toMin(a[1][0].tm)-toMin(b[1][0].tm)).map(([cid,ss])=>{
+    ss.sort((a,b)=>a.tm.localeCompare(b.tm));
+    const chips=ss.map(s=>{
+      const soon=today&&toMin(s.tm)-now.min<=60;
+      const ver=s.v==='VF'?'':`<small>${esc(s.v)}</small>`;
+      const inner=`${s.tm}${ver}`;
+      return s.u?`<a class="chip${soon?' soon':''}" href="${esc(s.u)}" target="_blank" rel="noopener">${inner}</a>`:`<span class="chip nob${soon?' soon':''}">${inner}</span>`;
+    }).join('');
+    const mins=today?toMin(ss[0].tm)-now.min:99;
+    const nob=ss.some(s=>!s.u);
+    return `<div class="row"><div class="rowh"><b>${esc(D.cinemas[cid].name)}</b><span>${esc(D.cinemas[cid].town||'')}</span></div><div class="chips">${chips}${mins<=60?`<span class="soonl">Dans ${mins} min</span>`:''}${nob?'<span class="note">Pas de réservation en ligne</span>':''}</div></div>`;
+  }).join('');
+  return `<section class="film"><div class="head">${poster}<div><h2>${esc(f.t)}</h2><div class="meta">${meta}</div><div class="tags">${reissue?`<span class="tag re">Ressortie${f.y?` · film de ${f.y}`:''}</span>`:''}${f.sc?`<span class="tag">Allociné ${String(f.sc).replace('.',',')}/5</span>`:''}</div></div></div>${rows}</section>`;
+}
+init().catch(e=>{document.getElementById('app').innerHTML=`<div class="empty">Impossible de charger les séances. ${esc(e.message)}</div>`});
+</script>
+</body>
+</html>
