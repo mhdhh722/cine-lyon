@@ -237,6 +237,22 @@ function renderSheet(now){
    <h2 style="margin:0;font-family:var(--display);font-size:20px">Séances</h2>${sess||'<div class="empty">Plus de séance avec tes filtres cinémas.</div>'}</div>`;
   document.getElementById('back').onclick=()=>history.back();
 }
+function card({id,f,cs},now,today){
+  const reissue=isReissue(f,now),lb=lbStatus(f);
+  const meta=[(f.g||[]).slice(0,2).join(', '),f.d,f.rt,f.y].filter(Boolean).map(esc).join(' · ');
+  const poster=f.p?`<img class="poster" data-film="${id}" src="${esc(f.p)}" alt="" loading="lazy" width="60" height="88">`:`<div class="poster" data-film="${id}" aria-hidden="true">${esc(f.t.slice(0,2))}</div>`;
+  const rows=Object.entries(cs).sort((a,b)=>toMin(a[1][0].tm)-toMin(b[1][0].tm)).map(([cid,ss])=>{
+    ss.sort((a,b)=>a.tm.localeCompare(b.tm));
+    const chips=ss.map(s=>{
+      const ver=s.v==='VF'?'':`<small>${esc(s.v)}</small>`;
+      const inner=`${s.tm}${ver}`;
+      return s.u?`<a class="chip" href="${esc(s.u)}" target="_blank" rel="noopener">${inner}</a>`:`<span class="chip nob">${inner}</span>`;
+    }).join('');
+    const nob=ss.some(s=>!s.u);
+    return `<div class="row"><div class="rowh"><b>${esc(D.cinemas[cid].name)}</b><span>${esc(D.cinemas[cid].town||'')}</span></div><div class="chips">${chips}${nob?'<span class="note">Pas de réservation en ligne</span>':''}</div></div>`;
+  }).join('');
+  return `<section class="film${lb==='seen'?' seen':''}"><div class="head">${poster}<div><h2><button data-film="${id}">${esc(f.t)}</button></h2><div class="meta">${meta}</div><div class="tags">${lb==='wl'?'<span class="tag wl">Dans ta watchlist</span>':''}${lb==='seen'?'<span class="tag seen">Déjà vu</span>':''}${reissue?`<span class="tag re">Ressortie${f.y?` · film de ${f.y}`:''}</span>`:''}${f.sc?`<span class="tag">Allociné ${String(f.sc).replace('.',',')}/5</span>`:''}</div></div></div>${rows}</section>`;
+}
 setInterval(()=>{if(!document.hidden&&D&&!state.film&&!document.activeElement?.matches('input'))render()},30000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&D&&!state.film)render()});
 init().catch(e=>{document.getElementById('app').innerHTML=`<div class="empty">Impossible de charger les séances. ${esc(e.message)}</div>`});
