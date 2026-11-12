@@ -80,7 +80,7 @@ const toMin=t=>(+t.slice(0,2))*60+(+t.slice(3,5));
 const dayInfo=d=>{const dt=new Date(d+'T12:00:00Z');return {dow:DOW[dt.getUTCDay()],num:dt.getUTCDate()}};
 const longDay=d=>new Intl.DateTimeFormat('fr-FR',{timeZone:'UTC',weekday:'long',day:'numeric',month:'long'}).format(new Date(d+'T12:00:00Z'));
 const state={day:null,rest:false,vo:false,off:new Set(JSON.parse(localStorage.getItem('offCinemas')||'[]'))};
-let D=null,S=[];
+let D=null,S=[],LBMSG='';
 state.hideSeen=localStorage.getItem('hideSeen')!=='0';state.wl=false;
 const LB=JSON.parse(localStorage.getItem('lb')||'null')||{watched:[],watchlist:[],at:null};
 function norm(t){return String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/&/g,' and ').replace(/[^a-z0-9]+/g,' ').trim().replace(/^(the|le|la|les|l|un|une|a|an) /,'')}
@@ -91,6 +91,13 @@ function inIdx(idx,f){
   return false;
 }
 function lbStatus(f){if(f._lb===undefined)f._lb=inIdx(IDX.watched,f)?'seen':(inIdx(IDX.watchlist,f)?'wl':'');return f._lb}
+const SB='https://mzcigllddekrdqfpbixh.supabase.co/rest/v1/rpc/',SBK='sb_publishable_JTLvwlGMdt8K7YtsxjClBw_7kXOd_0n';
+const sbCall=(fn,body)=>fetch(SB+fn,{method:'POST',headers:{apikey:SBK,Authorization:'Bearer '+SBK,'Content-Type':'application/json'},body:JSON.stringify(body)}).then(r=>{if(!r.ok)throw new Error('serveur '+r.status);return r.status===204?null:r.json()});
+const getCode=()=>localStorage.getItem('lbCode')||'';
+function applyLB(w,l){LB.watched=w;LB.watchlist=l;localStorage.setItem('lb',JSON.stringify(LB));IDX={watched:lbIndex(LB.watched),watchlist:lbIndex(LB.watchlist)};Object.values(D.films).forEach(x=>delete x._lb)}
+async function pullLB(){const c=getCode();if(!c)return false;const r=await sbCall('cine_lb_get',{p_code:c});if(!r)return false;
+  const changed=r.watched.length!==LB.watched.length||r.watchlist.length!==LB.watchlist.length;if(changed)applyLB(r.watched,r.watchlist);return changed}
+const pushLB=(k)=>{const c=getCode();if(!c)return Promise.resolve();return sbCall('cine_lb_set',{p_code:c,p_watched:k==='watched'?LB.watched:null,p_watchlist:k==='watchlist'?LB.watchlist:null})};
 function parseCSV(txt){
   const rows=[];let row=[],cur='',q=false;txt=txt.replace(/^\uFEFF/,'');
   for(let i=0;i<txt.length;i++){const c=txt[i];
@@ -120,6 +127,7 @@ async function init(){
   const days=[...new Set(S.map(s=>s.date))].filter(d=>d>=now.date).sort().slice(0,7);
   state.day=days.includes(now.date)?now.date:days[0];
   render(days);
+  pullLB().then(ch=>{if(ch)render(days)}).catch(()=>{});
 }
 function render(days){
   const now=parisNow(),app=document.getElementById('app');
@@ -150,6 +158,8 @@ function render(days){
       <ol><li>Sur letterboxd.com, Réglages, Données, Exporter</li><li>Dézippe, puis choisis les deux fichiers ci-dessous</li></ol>
       <label class="file">watched.csv <input type="file" accept=".csv,text/csv" data-k="watched"></label>
       <label class="file">watchlist.csv <input type="file" accept=".csv,text/csv" data-k="watchlist"></label>
+      <div class="file">Code de synchro <input id="lbcode" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(getCode())}" placeholder="colle ou crée un code" style="min-width:200px"></div>
+      <div class="file"><button id="lbgen">Créer un code</button><button id="lbsave">Enregistrer le code</button></div>
       <div class="note" id="lbmsg">Les fichiers restent sur cet appareil, rien n’est envoyé.</div>
       ${hasLB?'<button id="lbclear">Effacer mes données Letterboxd</button>':''}
     </div></details>
@@ -164,10 +174,17 @@ function render(days){
   const sn=app.querySelector('#seen');if(sn)sn.onclick=()=>{state.hideSeen=!state.hideSeen;localStorage.setItem('hideSeen',state.hideSeen?'1':'0');render(days)};
   app.querySelectorAll('.lb input[type=file]').forEach(inp=>inp.onchange=async()=>{
     const f=inp.files[0];if(!f)return;
-    try{LB[inp.dataset.k]=parseCSV(await f.text());LB.at=Date.now();localStorage.setItem('lb',JSON.stringify(LB));
-      IDX={watched:lbIndex(LB.watched),watchlist:lbIndex(LB.watchlist)};Object.values(D.films).forEach(x=>delete x._lb);render(days);app.querySelector('details.lb').open=true}
+    try{const rows=parseCSV(await f.text());applyLB(inp.dataset.k==='watched'?rows:LB.watched,inp.dataset.k==='watchlist'?rows:LB.watchlist);
+      let msg='';try{await pushLB(inp.dataset.k);if(getCode())msg='Synchronisé avec tes autres appareils.'}catch(e){msg='Importé ici, mais synchro impossible ('+e.message+').'}
+      LBMSG=msg;render(days);app.querySelector('details.lb').open=true}
     catch(e){app.querySelector('#lbmsg').textContent='Fichier illisible : '+e.message}
   });
+  const gen=app.querySelector('#lbgen');if(gen)gen.onclick=()=>{const a=new Uint8Array(12);crypto.getRandomValues(a);app.querySelector('#lbcode').value=[...a].map(x=>'abcdefghijkmnpqrstuvwxyz23456789'[x%32]).join('')};
+  const sv=app.querySelector('#lbsave');if(sv)sv.onclick=async()=>{const c=app.querySelector('#lbcode').value.trim();if(c.length<12){app.querySelector('#lbmsg').textContent='Le code doit faire au moins 12 caractères.';return}
+    localStorage.setItem('lbCode',c);const m=app.querySelector('#lbmsg');m.textContent='Synchronisation…';
+    try{const had=await pullLB();if(!had&&(LB.watched.length||LB.watchlist.length)){await pushLB('watched');await pushLB('watchlist')}LBMSG=had?'Données récupérées depuis ton autre appareil.':'Code enregistré, données envoyées.';render(days);app.querySelector('details.lb').open=true}
+    catch(e){m.textContent='Erreur de synchro : '+e.message}};
+  if(LBMSG){const m=app.querySelector('#lbmsg');if(m)m.textContent=LBMSG;LBMSG=''}
   const lc=app.querySelector('#lbclear');if(lc)lc.onclick=()=>{LB.watched=[];LB.watchlist=[];localStorage.removeItem('lb');IDX={watched:new Map(),watchlist:new Map()};Object.values(D.films).forEach(x=>delete x._lb);state.wl=false;render(days)};
   const det=app.querySelector('details.cin');
   app.querySelectorAll('.cinlist input').forEach(i=>i.onchange=()=>{i.checked?state.off.delete(i.dataset.c):state.off.add(i.dataset.c);localStorage.setItem('offCinemas',JSON.stringify([...state.off]));render(days);app.querySelector('details.cin').open=true});
