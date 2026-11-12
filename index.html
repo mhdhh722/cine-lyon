@@ -46,6 +46,15 @@ details.cin[open]{border-radius:16px;flex:1 1 100%}
 .chip.nob{border-style:dashed;border-color:#6B7280}
 .note{font-size:12px;color:var(--muted)}.soonl{font-size:12px;font-weight:700;color:var(--accent)}
 .empty{background:#fff;border:1px solid var(--edge);border-radius:16px;padding:24px;text-align:center;color:var(--muted)}
+.tag.wl{background:var(--accent);color:#fff}.tag.seen{background:#fff;border:1px solid var(--chipedge);color:var(--muted)}
+.film.seen{opacity:.55}
+details.lb{background:#fff;border:1.5px solid var(--chipedge);border-radius:16px;flex:1 1 100%}
+details.lb summary{min-height:44px;padding:0 16px;display:flex;align-items:center;font-size:14px;font-weight:700;cursor:pointer;list-style:none}
+.lbbody{padding:4px 16px 16px;display:flex;flex-direction:column;gap:12px;font-size:14px}
+.lbbody ol{margin:0;padding-left:20px;color:var(--muted)}
+.file{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-height:44px}
+.file input{font:inherit;font-size:14px;max-width:100%}
+.lbbody button{min-height:44px;padding:0 16px;border-radius:12px;border:1.5px solid var(--chipedge);background:#fff;font:inherit;font-weight:700;cursor:pointer;align-self:flex-start}
 .foot{font-size:12px;color:var(--muted);text-align:center}
 </style>
 <link rel="manifest" href="manifest.json">
@@ -72,6 +81,28 @@ const dayInfo=d=>{const dt=new Date(d+'T12:00:00Z');return {dow:DOW[dt.getUTCDay
 const longDay=d=>new Intl.DateTimeFormat('fr-FR',{timeZone:'UTC',weekday:'long',day:'numeric',month:'long'}).format(new Date(d+'T12:00:00Z'));
 const state={day:null,rest:false,vo:false,off:new Set(JSON.parse(localStorage.getItem('offCinemas')||'[]'))};
 let D=null,S=[];
+state.hideSeen=localStorage.getItem('hideSeen')!=='0';state.wl=false;
+const LB=JSON.parse(localStorage.getItem('lb')||'null')||{watched:[],watchlist:[],at:null};
+function norm(t){return String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/&/g,' and ').replace(/[^a-z0-9]+/g,' ').trim().replace(/^(the|le|la|les|l|un|une|a|an) /,'')}
+function lbIndex(list){const m=new Map();for(const [n,y] of list){const k=norm(n);if(!k)continue;if(!m.has(k))m.set(k,[]);m.get(k).push(y)}return m}
+let IDX={watched:lbIndex(LB.watched),watchlist:lbIndex(LB.watchlist)};
+function inIdx(idx,f){
+  for(const name of [f.t,f.ot]){const ys=idx.get(norm(name));if(!ys)continue;if(!f.y||ys.some(y=>!y||Math.abs(y-f.y)<=1))return true}
+  return false;
+}
+function lbStatus(f){if(f._lb===undefined)f._lb=inIdx(IDX.watched,f)?'seen':(inIdx(IDX.watchlist,f)?'wl':'');return f._lb}
+function parseCSV(txt){
+  const rows=[];let row=[],cur='',q=false;txt=txt.replace(/^\uFEFF/,'');
+  for(let i=0;i<txt.length;i++){const c=txt[i];
+    if(q){if(c==='"'){if(txt[i+1]==='"'){cur+='"';i++}else q=false}else cur+=c}
+    else if(c==='"')q=true;else if(c===','){row.push(cur);cur=''}
+    else if(c==='\n'||c==='\r'){if(c==='\r'&&txt[i+1]==='\n')i++;row.push(cur);cur='';if(row.length>1||row[0])rows.push(row);row=[]}
+    else cur+=c}
+  if(cur||row.length){row.push(cur);rows.push(row)}
+  const h=rows.shift().map(x=>x.trim().toLowerCase());const ni=h.indexOf('name'),yi=h.indexOf('year');
+  if(ni<0)throw new Error('colonne Name introuvable');
+  return rows.map(r=>[r[ni],+r[yi]||0]).filter(r=>r[0]);
+}
 function isReissue(f,now){
   if(f.rr) return true;
   if(f.rel){ if((new Date(now.date)-new Date(f.rel))/864e5>365) return true; }
@@ -98,8 +129,13 @@ function render(days){
   for(const s of list){(byFilm[s.f]??={})[s.c]??=[];byFilm[s.f][s.c].push(s)}
   let films=Object.entries(byFilm).map(([id,cs])=>({id,f:D.films[id],cs,first:Math.min(...Object.values(cs).flat().map(s=>toMin(s.tm)))}));
   if(state.rest) films=films.filter(x=>isReissue(x.f,now));
+  if(state.wl) films=films.filter(x=>lbStatus(x.f)==='wl');
+  else if(state.hideSeen) films=films.filter(x=>lbStatus(x.f)!=='seen');
   films.sort((a,b)=>a.first-b.first);
   const nCin=Object.keys(D.cinemas).length;
+  const hasLB=LB.watched.length||LB.watchlist.length;
+  const wlWeek=hasLB?new Set(S.filter(s=>days.includes(s.date)&&lbStatus(D.films[s.f])==='wl').map(s=>s.f)).size:0;
+  const nSeen=hasLB?new Set(list.filter(s=>lbStatus(D.films[s.f])==='seen').map(s=>s.f)).size:0;
   const cinBox=Object.entries(D.cinemas).map(([id,c])=>`<label for="c-${id}"><input id="c-${id}" type="checkbox" data-c="${id}" ${state.off.has(id)?'':'checked'}>${esc(c.name)}<span class="note">${esc(c.town||'')}</span></label>`).join('');
   const title=today?'Aujourd’hui':longDay(state.day).replace(/^./,c=>c.toUpperCase());
   app.innerHTML=`
@@ -109,6 +145,14 @@ function render(days){
     <details class="cin"><summary>Cinémas · ${nCin-state.off.size}/${nCin}</summary><div class="cinlist">${cinBox}</div></details>
     <button class="pill" id="rest" aria-pressed="${state.rest}">Ressorties</button>
     <button class="pill" id="vo" aria-pressed="${state.vo}">VO</button>
+    ${hasLB?`<button class="pill" id="wl" aria-pressed="${state.wl}">Ma watchlist · ${wlWeek}</button><button class="pill" id="seen" aria-pressed="${state.hideSeen}">Masquer les vus${nSeen?` · ${nSeen}`:''}</button>`:''}
+    <details class="lb"><summary>Letterboxd${hasLB?` · ${LB.watched.length} vus, ${LB.watchlist.length} à voir`:''}</summary><div class="lbbody">
+      <ol><li>Sur letterboxd.com, Réglages, Données, Exporter</li><li>Dézippe, puis choisis les deux fichiers ci-dessous</li></ol>
+      <label class="file">watched.csv <input type="file" accept=".csv,text/csv" data-k="watched"></label>
+      <label class="file">watchlist.csv <input type="file" accept=".csv,text/csv" data-k="watchlist"></label>
+      <div class="note" id="lbmsg">Les fichiers restent sur cet appareil, rien n’est envoyé.</div>
+      ${hasLB?'<button id="lbclear">Effacer mes données Letterboxd</button>':''}
+    </div></details>
   </div>
   <h2 style="margin:0;font-family:var(--display);font-size:20px">${title} · ${films.length} film${films.length>1?'s':''}</h2>
   ${films.length?films.map(x=>card(x,now,today)).join(''):'<div class="empty">Aucune séance avec ces filtres.</div>'}
@@ -116,6 +160,15 @@ function render(days){
   app.querySelectorAll('.day').forEach(b=>b.onclick=()=>{state.day=b.dataset.d;render(days)});
   app.querySelector('#rest').onclick=()=>{state.rest=!state.rest;render(days)};
   app.querySelector('#vo').onclick=()=>{state.vo=!state.vo;render(days)};
+  const w=app.querySelector('#wl');if(w)w.onclick=()=>{state.wl=!state.wl;render(days)};
+  const sn=app.querySelector('#seen');if(sn)sn.onclick=()=>{state.hideSeen=!state.hideSeen;localStorage.setItem('hideSeen',state.hideSeen?'1':'0');render(days)};
+  app.querySelectorAll('.lb input[type=file]').forEach(inp=>inp.onchange=async()=>{
+    const f=inp.files[0];if(!f)return;
+    try{LB[inp.dataset.k]=parseCSV(await f.text());LB.at=Date.now();localStorage.setItem('lb',JSON.stringify(LB));
+      IDX={watched:lbIndex(LB.watched),watchlist:lbIndex(LB.watchlist)};Object.values(D.films).forEach(x=>delete x._lb);render(days);app.querySelector('details.lb').open=true}
+    catch(e){app.querySelector('#lbmsg').textContent='Fichier illisible : '+e.message}
+  });
+  const lc=app.querySelector('#lbclear');if(lc)lc.onclick=()=>{LB.watched=[];LB.watchlist=[];localStorage.removeItem('lb');IDX={watched:new Map(),watchlist:new Map()};Object.values(D.films).forEach(x=>delete x._lb);state.wl=false;render(days)};
   const det=app.querySelector('details.cin');
   app.querySelectorAll('.cinlist input').forEach(i=>i.onchange=()=>{i.checked?state.off.delete(i.dataset.c):state.off.add(i.dataset.c);localStorage.setItem('offCinemas',JSON.stringify([...state.off]));render(days);app.querySelector('details.cin').open=true});
 }
@@ -135,7 +188,8 @@ function card({id,f,cs},now,today){
     const nob=ss.some(s=>!s.u);
     return `<div class="row"><div class="rowh"><b>${esc(D.cinemas[cid].name)}</b><span>${esc(D.cinemas[cid].town||'')}</span></div><div class="chips">${chips}${mins<=60?`<span class="soonl">Dans ${mins} min</span>`:''}${nob?'<span class="note">Pas de réservation en ligne</span>':''}</div></div>`;
   }).join('');
-  return `<section class="film"><div class="head">${poster}<div><h2>${esc(f.t)}</h2><div class="meta">${meta}</div><div class="tags">${reissue?`<span class="tag re">Ressortie${f.y?` · film de ${f.y}`:''}</span>`:''}${f.sc?`<span class="tag">Allociné ${String(f.sc).replace('.',',')}/5</span>`:''}</div></div></div>${rows}</section>`;
+  const lb=lbStatus(f);
+  return `<section class="film${lb==='seen'?' seen':''}"><div class="head">${poster}<div><h2>${esc(f.t)}</h2><div class="meta">${meta}</div><div class="tags">${lb==='wl'?'<span class="tag wl">Dans ta watchlist</span>':''}${lb==='seen'?'<span class="tag seen">Déjà vu</span>':''}${reissue?`<span class="tag re">Ressortie${f.y?` · film de ${f.y}`:''}</span>`:''}${f.sc?`<span class="tag">Allociné ${String(f.sc).replace('.',',')}/5</span>`:''}</div></div></div>${rows}</section>`;
 }
 init().catch(e=>{document.getElementById('app').innerHTML=`<div class="empty">Impossible de charger les séances. ${esc(e.message)}</div>`});
 </script>
